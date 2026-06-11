@@ -127,14 +127,16 @@ const STORY = [
 ];
 
 const state = {
-  act: 1, maxAct: 1, day: 1, objective: 0, sceneIndex: 0, activeScene: null,
+  act: 0, maxAct: 5, day: 1, objective: 0, sceneIndex: 0, activeScene: null,
   completedScenes: new Set(), hp: 380, maxHp: 380, attack: 107, defense: 25,
   enemyHp: 520, enemyMaxHp: 520, level: 1, exp: 0, busy: false,
   stageComplete: false, battleLost: false, fightingBoss: false,
   pendingLevelUps: 0, lastBattle: null, enemyVisible: false,
   skillEnergy: { tarot: 0, freeran: 0, elaine: 0 }, maxSkillEnergy: 100,
-  unlockedMembers: new Set(["mici"]), runUnlockedMembers: new Set(["mici"]), partyMembers: new Set(["mici"]),
-  partyPositions: { left: "mici", right: null, top: null, bottom: null },
+  unlockedMembers: new Set(["mici", "tarot", "freeran", "elaine"]),
+  runUnlockedMembers: new Set(["mici", "tarot", "freeran", "elaine"]),
+  partyMembers: new Set(["mici", "tarot", "freeran", "elaine"]),
+  partyPositions: { left: "mici", right: "tarot", top: "freeran", bottom: "elaine" },
   meetingMember: null, formationEditing: false
 };
 
@@ -262,9 +264,7 @@ function spendSkillEnergy(memberId) {
 }
 
 function membersAvailableAtActStart(act) {
-  return Object.keys(PARTY_MEMBERS).filter((memberId) => {
-    return memberId === "mici" || MEMBER_UNLOCK_ACT[memberId] < act;
-  });
+  return Object.keys(PARTY_MEMBERS);
 }
 
 function memberAvailableInCurrentRun(memberId) {
@@ -514,11 +514,6 @@ function resetActProgressForReplay(act) {
 }
 
 async function playActFromChapter(act) {
-  if (act > state.maxAct) {
-    showLobbyToast(`Hồi ${act} chưa được mở.`);
-    return;
-  }
-
   resetActProgressForReplay(act);
   await enterGame();
 }
