@@ -132,7 +132,7 @@ const state = {
   enemyHp: 520, enemyMaxHp: 520, level: 1, exp: 0, busy: false,
   stageComplete: false, battleLost: false, fightingBoss: false,
   pendingLevelUps: 0, lastBattle: null, enemyVisible: false,
-  unlockedMembers: new Set(["mici"]), partyMembers: new Set(["mici"]),
+  unlockedMembers: new Set(["mici"]), runUnlockedMembers: new Set(["mici"]), partyMembers: new Set(["mici"]),
   partyPositions: { left: "mici", right: null, top: null, bottom: null },
   meetingMember: null, formationEditing: false
 };
@@ -179,6 +179,59 @@ const PARTY_MEMBERS = {
   elaine: { name: "Elaine", image: "Assest/characters/Elaine/Elaine-normalized.png" }
 };
 
+const MEMBER_UNLOCK_ACT = {
+  mici: 0,
+  tarot: 1,
+  freeran: 2,
+  elaine: 4
+};
+
+function membersAvailableAtActStart(act) {
+  return Object.keys(PARTY_MEMBERS).filter((memberId) => {
+    return memberId === "mici" || MEMBER_UNLOCK_ACT[memberId] < act;
+  });
+}
+
+function memberAvailableInCurrentRun(memberId) {
+  return state.runUnlockedMembers.has(memberId);
+}
+
+function rebuildPartyForCurrentRun() {
+  Object.keys(FORMATION_POSITIONS).forEach((position) => {
+    const memberId = state.partyPositions[position];
+    if (memberId && !memberAvailableInCurrentRun(memberId)) {
+      state.partyPositions[position] = null;
+    }
+  });
+
+  if (!Object.values(state.partyPositions).includes("mici")) {
+    const emptyPosition = Object.keys(FORMATION_POSITIONS).find((position) => !state.partyPositions[position]);
+    state.partyPositions[emptyPosition || "left"] = "mici";
+  }
+
+  state.partyMembers = new Set(Object.values(state.partyPositions).filter(Boolean));
+  state.partyMembers.add("mici");
+}
+
+function prepareMembersForActStart(act) {
+  state.runUnlockedMembers = new Set(membersAvailableAtActStart(act));
+  state.runUnlockedMembers.add("mici");
+  rebuildPartyForCurrentRun();
+}
+
+function addMemberToCurrentRun(memberId) {
+  if (!memberId) return;
+  state.unlockedMembers.add(memberId);
+  state.runUnlockedMembers.add(memberId);
+
+  if (!memberPosition(memberId)) {
+    const emptyPosition = Object.keys(FORMATION_POSITIONS).find((position) => !state.partyPositions[position]);
+    if (emptyPosition) state.partyPositions[emptyPosition] = memberId;
+  }
+
+  rebuildPartyForCurrentRun();
+}
+
 const FORMATION_POSITIONS = {
   left: "Phía trái",
   right: "Phía phải",
@@ -191,7 +244,7 @@ function memberPosition(memberId) {
 }
 
 function moveMemberToPosition(memberId, targetPosition) {
-  if (!state.unlockedMembers.has(memberId)) return;
+  if (!memberAvailableInCurrentRun(memberId)) return;
   const sourcePosition = memberPosition(memberId);
   const displacedMember = state.partyPositions[targetPosition];
   if (sourcePosition === targetPosition) return;
@@ -299,7 +352,7 @@ function renderFormationEditor() {
     removeMemberFromFormation(event.dataTransfer.getData("text/member"));
   });
   Object.keys(PARTY_MEMBERS).forEach((memberId) => {
-    if (!state.unlockedMembers.has(memberId)) return;
+    if (!memberAvailableInCurrentRun(memberId)) return;
     const card = formationMemberCard(memberId, memberPosition(memberId) ? "is-assigned" : "is-available");
     if (!memberPosition(memberId)) {
       card.addEventListener("click", () => {
@@ -366,6 +419,7 @@ function resetActProgressForReplay(act) {
   state.meetingMember = null;
   state.busy = false;
   state.hp = state.maxHp;
+  prepareMembersForActStart(act);
 
   state.completedScenes = new Set(
     [...state.completedScenes].filter((key) => !String(key).startsWith(`${act}-`))
@@ -556,7 +610,7 @@ async function openScene(item) {
   state.activeScene = item;
   state.sceneIndex = 0;
   state.enemyVisible = false;
-  state.meetingMember = item.recruit && !state.unlockedMembers.has(item.recruit) ? item.recruit : null;
+  state.meetingMember = item.recruit && !memberAvailableInCurrentRun(item.recruit) ? item.recruit : null;
   updateHud();
   ui.game.classList.add("story-event");
   ui.game.classList.toggle("companion-meeting", Boolean(state.meetingMember));
@@ -599,10 +653,10 @@ function skipDialogue() {
 async function finishScene() {
   const item = state.activeScene;
   const index = currentStage().scenes.indexOf(item);
-  const recruitedMember = item.recruit && !state.unlockedMembers.has(item.recruit) ? item.recruit : null;
+  const recruitedMember = item.recruit && !memberAvailableInCurrentRun(item.recruit) ? item.recruit : null;
   state.completedScenes.add(`${state.act}-${index}`);
   state.objective = Math.min(index + 1, 3);
-  if (recruitedMember) state.unlockedMembers.add(recruitedMember);
+  if (recruitedMember) addMemberToCurrentRun(recruitedMember);
   state.activeScene = null;
   state.meetingMember = null;
   ui.dialogueBox.hidden = true;
@@ -812,6 +866,7 @@ async function nextDay() {
     state.fightingBoss = false;
     state.battleLost = false;
     state.enemyVisible = false;
+    prepareMembersForActStart(state.act);
     ui.nextDayButton.querySelector("span").textContent = "Ngày Tiếp Theo";
     updateHud();
     await openScene(sceneForToday());
@@ -847,6 +902,7 @@ async function start() {
   ui.levelUpBox.hidden = true;
   ui.reviveBox.hidden = true;
   state.enemyVisible = false;
+  prepareMembersForActStart(state.act);
   ui.lobbyImage.src = ASSETS.lobby.adventure;
   ui.lobbyImage.alt = "Sảnh Mạo Hiểm";
   ui.lobby.hidden = false;

@@ -1,0 +1,11 @@
+﻿GAME UI HTML - FIXED STANDALONE BUILD
+
+Recommended:
+1. Open OPEN-ME.html to view and navigate all seven screens.
+2. This file contains all images, CSS, and JavaScript, so it can be opened directly.
+3. inventory.html, formation.html, adventure.html, skills.html, guild.html,
+   events.html, and chapters.html are standalone versions of each screen.
+
+Keyboard shortcuts in OPEN-ME.html:
+- Keys 1 through 7 switch screens.
+- Escape activates the back button when available.
