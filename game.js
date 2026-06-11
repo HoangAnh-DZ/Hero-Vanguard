@@ -11,14 +11,14 @@ const ASSETS = {
     guild: "Assest/ui/ChatGPT Image Jun 10, 2026, 12_17_37 PM (7).png",
     events: "Assest/ui/ChatGPT Image Jun 10, 2026, 12_17_42 PM (8).png"
   },
-  backgrounds: [
-    "Assest/ui background/ChatGPT Image Jun 6, 2026, 06_05_16 PM (1).png",
-    "Assest/ui background/ChatGPT Image Jun 6, 2026, 06_05_16 PM (2).png",
-    "Assest/ui background/ChatGPT Image Jun 6, 2026, 06_05_16 PM (3).png",
-    "Assest/ui background/ChatGPT Image Jun 6, 2026, 06_05_17 PM (5).png",
-    "Assest/ui background/ChatGPT Image Jun 6, 2026, 06_05_17 PM (5).png",
-    "Assest/ui background/ChatGPT Image Jun 6, 2026, 06_05_58 PM.png"
-  ],
+ backgrounds: [
+  "Assest/ui background/Hồi 0.png",
+  "Assest/ui background/Hồi 1.png",
+  "Assest/ui background/Hồi 2.png",
+  "Assest/ui background/Hồi 3.png",
+  "Assest/ui background/Hồi 4.png",
+  "Assest/ui background/Hồi 5.png"
+],
   enemies: {
     0: [
       "Assest/quai/Hồi 0/0/ChatGPT Image Jun 6, 2026, 06_10_08 PM (1)-sprite.png",
