@@ -132,6 +132,7 @@ const state = {
   enemyHp: 520, enemyMaxHp: 520, level: 1, exp: 0, busy: false,
   stageComplete: false, battleLost: false, fightingBoss: false,
   pendingLevelUps: 0, lastBattle: null, enemyVisible: false,
+  skillEnergy: { tarot: 0, freeran: 0, elaine: 0 }, maxSkillEnergy: 100,
   unlockedMembers: new Set(["mici"]), runUnlockedMembers: new Set(["mici"]), partyMembers: new Set(["mici"]),
   partyPositions: { left: "mici", right: null, top: null, bottom: null },
   meetingMember: null, formationEditing: false
@@ -153,7 +154,7 @@ const ui = Object.fromEntries([
   "lobbyToast", "game", "returnLobby", "party", "elder", "enemy", "enemyHud", "enemyImage", "enemyPlaceholder", "enemyHpBar",
   "enemyHpText", "partyHpText", "partyLevel", "partyExp", "attackText", "defenseText",
   "actLabel", "dayTop", "dayText", "dayProgress", "questTitle", "objectiveText",
-  "combatLog", "nextDayButton", "dialogueBox", "dialogueSpeaker", "dialogueText",
+  "combatLog", "skillEnergyPanel", "nextDayButton", "dialogueBox", "dialogueSpeaker", "dialogueText",
   "dialogueNext", "dialogueSkip", "levelUpBox", "levelUpText", "upgradeOptions",
   "reviveBox", "reviveOptions"
 ].map((id) => [id, document.querySelector(`#${id}`)]));
@@ -186,6 +187,80 @@ const MEMBER_UNLOCK_ACT = {
   elaine: 4
 };
 
+const SUPPORT_MEMBER_IDS = ["tarot", "freeran", "elaine"];
+const SKILL_ENERGY_GAIN = 25;
+
+function activeSupportMembers() {
+  return SUPPORT_MEMBER_IDS.filter((memberId) => {
+    return state.partyMembers.has(memberId) &&
+      memberAvailableInCurrentRun(memberId) &&
+      Boolean(memberPosition(memberId));
+  });
+}
+
+function renderSkillEnergyPanel() {
+  if (!ui.skillEnergyPanel) return;
+  const members = activeSupportMembers();
+  ui.skillEnergyPanel.hidden = members.length === 0;
+  ui.skillEnergyPanel.dataset.count = members.length;
+  ui.skillEnergyPanel.replaceChildren();
+
+  members.forEach((memberId) => {
+    const member = PARTY_MEMBERS[memberId];
+    const value = Math.max(0, Math.min(state.maxSkillEnergy, state.skillEnergy[memberId] || 0));
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "skill-energy-card";
+    card.disabled = true;
+    card.dataset.member = memberId;
+
+    const image = document.createElement("img");
+    image.src = member.image;
+    image.alt = member.name;
+
+    const copy = document.createElement("span");
+    copy.className = "skill-energy-copy";
+
+    const name = document.createElement("strong");
+    name.textContent = member.name;
+
+    const number = document.createElement("small");
+    number.textContent = `${value} / ${state.maxSkillEnergy}`;
+
+    const bar = document.createElement("i");
+    bar.className = "skill-energy-bar";
+    const fill = document.createElement("b");
+    fill.style.width = `${value / state.maxSkillEnergy * 100}%`;
+    bar.append(fill);
+
+    copy.append(name, number, bar);
+    card.append(image, copy);
+    ui.skillEnergyPanel.append(card);
+  });
+}
+
+function gainSkillEnergy(memberId, amount = SKILL_ENERGY_GAIN) {
+  if (!SUPPORT_MEMBER_IDS.includes(memberId)) return;
+  if (!activeSupportMembers().includes(memberId)) return;
+  state.skillEnergy[memberId] = Math.min(
+    state.maxSkillEnergy,
+    (state.skillEnergy[memberId] || 0) + amount
+  );
+  renderSkillEnergyPanel();
+}
+
+function skillEnergyReady(memberId) {
+  return SUPPORT_MEMBER_IDS.includes(memberId) &&
+    activeSupportMembers().includes(memberId) &&
+    (state.skillEnergy[memberId] || 0) >= state.maxSkillEnergy;
+}
+
+function spendSkillEnergy(memberId) {
+  if (!SUPPORT_MEMBER_IDS.includes(memberId)) return;
+  state.skillEnergy[memberId] = 0;
+  renderSkillEnergyPanel();
+}
+
 function membersAvailableAtActStart(act) {
   return Object.keys(PARTY_MEMBERS).filter((memberId) => {
     return memberId === "mici" || MEMBER_UNLOCK_ACT[memberId] < act;
@@ -211,6 +286,7 @@ function rebuildPartyForCurrentRun() {
 
   state.partyMembers = new Set(Object.values(state.partyPositions).filter(Boolean));
   state.partyMembers.add("mici");
+  renderSkillEnergyPanel();
 }
 
 function prepareMembersForActStart(act) {
@@ -256,6 +332,7 @@ function moveMemberToPosition(memberId, targetPosition) {
   }
   state.partyMembers = new Set(Object.values(state.partyPositions).filter(Boolean));
   state.partyMembers.add("mici");
+  renderSkillEnergyPanel();
   renderFormationEditor();
   updateHud();
 }
@@ -265,6 +342,7 @@ function removeMemberFromFormation(memberId) {
   const position = memberPosition(memberId);
   if (position) state.partyPositions[position] = null;
   state.partyMembers.delete(memberId);
+  renderSkillEnergyPanel();
   renderFormationEditor();
   updateHud();
 }
@@ -582,6 +660,7 @@ function updateHud() {
       fighter.classList.toggle(`party-position-${position}`, !state.meetingMember && memberPosition(member) === position);
     });
   });
+  renderSkillEnergyPanel();
   updateLobbyStatus();
   updateReturnButton();
 }
@@ -757,13 +836,21 @@ async function battle(name, boss = false) {
     const fighters = activeFighters();
     const attacker = fighters[(round - 1) % fighters.length];
     const attackerName = attacker.dataset.name || "Mici";
+    const attackerMember = attacker.dataset.member;
+    const chargedSkill = skillEnergyReady(attackerMember);
     attacker.classList.add("attacking", "skill");
-    ui.combatLog.textContent = `Lượt ${round}: ${attackerName} dùng ${fighterSkillName(attacker)}!`;
+    ui.combatLog.textContent = chargedSkill
+      ? `Lượt ${round}: ${attackerName} dùng tuyệt kỹ ${fighterSkillName(attacker)}!`
+      : `Lượt ${round}: ${attackerName} dùng ${fighterSkillName(attacker)}!`;
     await wait(720);
-    const damage = state.attack;
+    const damage = chargedSkill ? Math.round(state.attack * 1.6) : state.attack;
+    if (chargedSkill) spendSkillEnergy(attackerMember);
     state.enemyHp = Math.max(0, state.enemyHp - damage);
+    if (SUPPORT_MEMBER_IDS.includes(attackerMember) && !chargedSkill) gainSkillEnergy(attackerMember);
     ui.enemy.classList.add("hit");
-    ui.combatLog.textContent = `${name} mất ${damage} HP.`;
+    ui.combatLog.textContent = chargedSkill
+      ? `${attackerName} tung tuyệt kỹ, ${name} mất ${damage} HP.`
+      : `${name} mất ${damage} HP.`;
     updateHud();
     await wait(620);
     attacker.classList.remove("attacking", "skill");
