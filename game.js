@@ -167,7 +167,8 @@ ui.fighters = [...document.querySelectorAll(".fighter")];
 ui.lobbyNav = [...document.querySelectorAll(".lobby-nav button")];
 
 const currentStage = () => STORY[state.act];
-const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+const GAME_SPEED = 3;
+const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms / GAME_SPEED));
 const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 let lobbyRoute = "adventure";
 let gameStarted = false;
@@ -248,7 +249,6 @@ function gainSkillEnergy(memberId, amount = SKILL_ENERGY_GAIN) {
     state.maxSkillEnergy,
     (state.skillEnergy[memberId] || 0) + amount
   );
-  renderSkillEnergyPanel();
 }
 
 function skillEnergyReady(memberId) {
@@ -261,6 +261,53 @@ function spendSkillEnergy(memberId) {
   if (!SUPPORT_MEMBER_IDS.includes(memberId)) return;
   state.skillEnergy[memberId] = 0;
   renderSkillEnergyPanel();
+}
+
+function triggerSupportSkill(memberId) {
+  if (!skillEnergyReady(memberId)) return "";
+
+  const memberName = PARTY_MEMBERS[memberId].name;
+
+  if (memberId === "tarot") {
+    const gain = Math.max(1, Math.round(state.defense * 0.1));
+    state.defense += gain;
+    spendSkillEnergy(memberId);
+    return `${memberName} kích hoạt Pháp Sư Ấn Chính: Thủ tổ đội +${gain}.`;
+  }
+
+  if (memberId === "freeran") {
+    const gain = Math.max(1, Math.round(state.attack * 0.1));
+    state.attack += gain;
+    spendSkillEnergy(memberId);
+    return `${memberName} kích hoạt Pháp Sư Pha Lê: Công tổ đội +${gain}.`;
+  }
+
+  if (memberId === "elaine") {
+    const heal = Math.max(1, Math.round(state.maxHp * 0.1));
+    state.hp = Math.min(state.maxHp, state.hp + heal);
+    spendSkillEnergy(memberId);
+    return `${memberName} kích hoạt Người Bảo Hộ Thiên Nhiên: hồi ${heal} HP.`;
+  }
+
+  return "";
+}
+
+function gainEnergyForSupportsAfterRound() {
+  const messages = [];
+
+  activeSupportMembers().forEach((memberId) => {
+    gainSkillEnergy(memberId, SKILL_ENERGY_GAIN);
+
+    if (skillEnergyReady(memberId)) {
+      const message = triggerSupportSkill(memberId);
+      if (message) messages.push(message);
+    }
+  });
+
+  renderSkillEnergyPanel();
+  updateHud();
+
+  return messages;
 }
 
 function membersAvailableAtActStart(act) {
@@ -819,68 +866,95 @@ async function battle(name, boss = false) {
   state.fightingBoss = boss;
   state.lastBattle = { name, boss };
   setEnemy(name, boss);
+
   state.enemyMaxHp = boss ? 750 + state.act * 160 : 300 + state.day * 10;
   state.enemyHp = state.enemyMaxHp;
+
   ui.enemy.classList.remove("defeated");
   updateHud();
-  ui.combatLog.textContent = `Tổ đội đối đầu ${name}. Chuẩn bị giao chiến...`;
+
+  ui.combatLog.textContent = `Tổ đội đối đầu ${name}. Mici đại diện tổ đội giao chiến...`;
   await wait(900);
 
   let round = 1;
+
   while (state.enemyHp > 0 && state.hp > 0) {
-    const fighters = activeFighters();
-    const attacker = fighters[(round - 1) % fighters.length];
-    const attackerName = attacker.dataset.name || "Mici";
-    const attackerMember = attacker.dataset.member;
-    const chargedSkill = skillEnergyReady(attackerMember);
-    attacker.classList.add("attacking", "skill");
-    ui.combatLog.textContent = chargedSkill
-      ? `Lượt ${round}: ${attackerName} dùng tuyệt kỹ ${fighterSkillName(attacker)}!`
-      : `Lượt ${round}: ${attackerName} dùng ${fighterSkillName(attacker)}!`;
+    const mici = ui.mici;
+    const attackerName = "Mici";
+
+    mici.classList.add("attacking", "skill");
+    ui.combatLog.textContent = `Lượt ${round}: Mici đại diện tổ đội tấn công!`;
     await wait(720);
-    const damage = chargedSkill ? Math.round(state.attack * 1.6) : state.attack;
-    if (chargedSkill) spendSkillEnergy(attackerMember);
+
+    const damage = Math.max(1, state.attack);
     state.enemyHp = Math.max(0, state.enemyHp - damage);
-    if (SUPPORT_MEMBER_IDS.includes(attackerMember) && !chargedSkill) gainSkillEnergy(attackerMember);
+
     ui.enemy.classList.add("hit");
-    ui.combatLog.textContent = chargedSkill
-      ? `${attackerName} tung tuyệt kỹ, ${name} mất ${damage} HP.`
-      : `${name} mất ${damage} HP.`;
+    ui.combatLog.textContent = `${name} nhận ${damage} sát thương từ Công tổ đội.`;
     updateHud();
+
     await wait(620);
-    attacker.classList.remove("attacking", "skill");
+    mici.classList.remove("attacking", "skill");
     ui.enemy.classList.remove("hit");
+
     if (!state.enemyHp) break;
 
     ui.enemy.classList.add("attacking");
-    ui.combatLog.textContent = `${name} tung đòn phản công vào ${attackerName}!`;
+    ui.combatLog.textContent = `${name} phản công tổ đội!`;
     await wait(720);
+
     const enemyDamage = boss
       ? random(65 + state.act * 8, 90 + state.act * 10)
       : random(35 + state.act * 5, 55 + state.act * 7);
+
     const received = Math.max(0, enemyDamage - state.defense);
     state.hp = Math.max(0, state.hp - received);
-    attacker.classList.add("hit");
-    ui.combatLog.textContent = `${attackerName} trúng đòn: ${enemyDamage} damage quái - ${state.defense} Thủ = mất ${received} HP.`;
+
+    mici.classList.add("hit");
+    ui.combatLog.textContent = `${name} gây ${enemyDamage} sát thương - ${state.defense} Thủ = tổ đội mất ${received} HP.`;
     updateHud();
+
     await wait(620);
     ui.enemy.classList.remove("attacking");
-    attacker.classList.remove("hit");
-    await wait(350);
+    mici.classList.remove("hit");
+
+    if (state.hp <= 0) break;
+
+    const supportMessages = gainEnergyForSupportsAfterRound();
+
+    if (supportMessages.length > 0) {
+      ui.combatLog.textContent = supportMessages.join(" ");
+      updateHud();
+      await wait(850);
+    } else if (activeSupportMembers().length > 0) {
+      ui.combatLog.textContent = `Kết thúc lượt ${round}. Các hỗ trợ nhận +25 Năng Lượng.`;
+      renderSkillEnergyPanel();
+      await wait(450);
+    }
+
     round += 1;
   }
 
   if (state.enemyHp <= 0) {
     ui.enemy.classList.add("defeated");
+
     const elite = !boss && state.day % 5 === 0;
     const rewardType = boss ? "boss" : (elite ? "elite" : "normal");
     const rewardLabel = boss ? "Boss khu vực" : (elite ? "Quái tinh anh" : "Quái thường");
     const expReward = random(...EXP_SYSTEM.rewards[rewardType]);
-    ui.combatLog.textContent = boss ? `Đã đánh bại ${name} và hoàn thành ${currentStage().title}.` : `Đã đánh bại ${name}. Có thể sang ngày tiếp theo.`;
+
+    ui.combatLog.textContent = boss
+      ? `Đã đánh bại ${name} và hoàn thành ${currentStage().title}.`
+      : `Đã đánh bại ${name}. Có thể sang ngày tiếp theo.`;
+
     addExp(expReward, rewardLabel);
+
     if (!boss) ui.nextDayButton.querySelector("span").textContent = "Ngày Tiếp Theo";
+
     updateHud();
+
     if (!boss) finishBlockingChoice();
+
     return true;
   }
 
