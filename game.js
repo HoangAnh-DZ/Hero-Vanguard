@@ -263,49 +263,71 @@ function spendSkillEnergy(memberId) {
   renderSkillEnergyPanel();
 }
 
-function triggerSupportSkill(memberId) {
+async function triggerSupportSkill(memberId) {
   if (!skillEnergyReady(memberId)) return "";
 
+  const fighter = ui.fighters.find((item) => item.dataset.member === memberId);
+
+  if (fighter) {
+    fighter.classList.add("attacking", "skill");
+  }
+
   const memberName = PARTY_MEMBERS[memberId].name;
+  let message = "";
+
+  ui.combatLog.textContent = `${memberName} đã đủ 100 Năng Lượng và chuẩn bị kích hoạt kỹ năng!`;
+  updateHud();
+  await wait(450);
 
   if (memberId === "tarot") {
     const gain = Math.max(1, Math.round(state.defense * 0.1));
     state.defense += gain;
-    spendSkillEnergy(memberId);
-    return `${memberName} kích hoạt Pháp Sư Ấn Chính: Thủ tổ đội +${gain}.`;
+    message = `${memberName} kích hoạt Pháp Sư Ấn Chính: Thủ tổ đội +${gain}.`;
   }
 
   if (memberId === "freeran") {
     const gain = Math.max(1, Math.round(state.attack * 0.1));
     state.attack += gain;
-    spendSkillEnergy(memberId);
-    return `${memberName} kích hoạt Pháp Sư Pha Lê: Công tổ đội +${gain}.`;
+    message = `${memberName} kích hoạt Pháp Sư Pha Lê: Công tổ đội +${gain}.`;
   }
 
   if (memberId === "elaine") {
     const heal = Math.max(1, Math.round(state.maxHp * 0.1));
     state.hp = Math.min(state.maxHp, state.hp + heal);
-    spendSkillEnergy(memberId);
-    return `${memberName} kích hoạt Người Bảo Hộ Thiên Nhiên: hồi ${heal} HP.`;
+    message = `${memberName} kích hoạt Người Bảo Hộ Thiên Nhiên: hồi ${heal} HP.`;
   }
 
-  return "";
+  spendSkillEnergy(memberId);
+  updateHud();
+
+  if (message) {
+    ui.combatLog.textContent = message;
+    await wait(550);
+  }
+
+  if (fighter) {
+    fighter.classList.remove("attacking", "skill");
+  }
+
+  return message;
 }
 
-function gainEnergyForSupportsAfterRound() {
+async function gainEnergyForSupportsAfterRound() {
   const messages = [];
 
-  activeSupportMembers().forEach((memberId) => {
+  for (const memberId of activeSupportMembers()) {
     gainSkillEnergy(memberId, SKILL_ENERGY_GAIN);
+    renderSkillEnergyPanel();
+    updateHud();
 
     if (skillEnergyReady(memberId)) {
-      const message = triggerSupportSkill(memberId);
+      const message = await triggerSupportSkill(memberId);
       if (message) messages.push(message);
+      renderSkillEnergyPanel();
+      updateHud();
+      await wait(250);
     }
-  });
-
-  renderSkillEnergyPanel();
-  updateHud();
+  }
 
   return messages;
 }
@@ -920,7 +942,7 @@ async function battle(name, boss = false) {
 
     if (state.hp <= 0) break;
 
-    const supportMessages = gainEnergyForSupportsAfterRound();
+    const supportMessages = await gainEnergyForSupportsAfterRound();
 
     if (supportMessages.length > 0) {
       ui.combatLog.textContent = supportMessages.join(" ");
