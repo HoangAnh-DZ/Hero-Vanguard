@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Hero Vanguard - Sáu Hồi Phiêu Lưu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game-shell" aria-label="Hero Vanguard">
+    <section class="lobby screen-view" id="lobby" aria-label="Sảnh chính">
+      <img class="lobby-art" id="lobbyImage" alt="">
+      <div class="lobby-hotspots" id="lobbyHotspots"></div>
+
+      <header class="lobby-topbar">
+        <button class="lobby-menu" type="button" aria-label="Mở menu"><i></i><i></i><i></i></button>
+        <div class="resource-chip energy"><b>ϟ</b><span><strong>28/30</strong><small>21:18</small></span><em>+</em></div>
+        <div class="resource-chip crystal"><b>◆</b><strong>100</strong><em>+</em></div>
+        <div class="resource-chip gold"><b>●</b><strong>89</strong><em>+</em></div>
+        <div class="resource-chip gem"><b>♦</b><strong>0</strong><em>+</em></div>
+      </header>
+
+      <aside class="lobby-progress" id="lobbyProgress">
+        <small>HÀNH TRÌNH HIỆN TẠI</small>
+        <strong id="lobbyAct">Hồi 0</strong>
+        <span id="lobbyStatus">Ngày 1 · LV.1 · HP 380/380</span>
+      </aside>
+
+      <section class="formation-editor" id="formationEditor" aria-label="Chỉnh sửa đội hình" hidden></section>
+
+      <nav class="lobby-nav" aria-label="Điều hướng sảnh">
+        <button type="button" data-route="inventory" aria-label="Trang Bị"><b>▣</b><span>Trang Bị</span></button>
+        <button type="button" data-route="formation" aria-label="Đội Hình"><b>♟</b><span>Đội Hình</span></button>
+        <button type="button" data-route="adventure" aria-label="Mạo Hiểm"><b>⚔</b><span>Mạo Hiểm</span></button>
+        <button type="button" data-route="skills" aria-label="Kỹ Năng"><b>✦</b><span>Kỹ Năng</span></button>
+        <button type="button" data-route="guild" aria-label="Công Hội"><b>⚑</b><span>Công Hội</span></button>
+      </nav>
+
+      <div class="lobby-toast" id="lobbyToast" role="status" aria-live="polite" hidden></div>
+    </section>
+
+    <section class="game screen-view" id="game" hidden>
+      <button class="return-lobby" id="returnLobby" type="button" aria-label="Quay về sảnh">‹</button>
+      <header class="top-hud">
+        <div class="day-track">
+          <span>Ngày</span><strong id="dayTop">1</strong>
+          <div class="track-line"><i id="dayProgress"></i></div>
+          <span class="boss-mark">◆</span>
+        </div>
+        <div class="act-title" id="actLabel">Hồi 0: Ngoại Ô Làng Gió Nhẹ</div>
+      </header>
+
+      <section class="battlefield" aria-label="Chiến trường">
+        <div class="enemy-hud" id="enemyHud" hidden>
+          <strong>Chuột đồng khổng lồ</strong>
+          <div class="health-bar enemy-bar"><i id="enemyHpBar"></i></div>
+          <span id="enemyHpText">520 / 520</span>
+        </div>
+
+        <div class="party" id="party">
+          <div class="fighter tarot" data-member="tarot" data-name="Tarot" hidden>
+            <span class="shadow"></span><img src="Assest/characters/Tarot/Tarot.png-transparent.png" alt="Tarot"><span class="effect slash-effect"></span>
+          </div>
+          <div class="fighter freeran" data-member="freeran" data-name="Frieran" hidden>
+            <span class="shadow"></span><img src="Assest/characters/Freeran/freeran-transparent-fixed.png" alt="Frieran"><span class="effect magic-effect"></span>
+          </div>
+          <div class="fighter elaine" data-member="elaine" data-name="Elaine" hidden>
+            <span class="shadow"></span><img src="Assest/characters/Elaine/Elaine-transparent-fixed.png" alt="Elaine"><span class="effect magic-effect"></span>
+          </div>
+          <div class="fighter mici" data-member="mici" data-name="Mici" data-fighter="mici">
+            <span class="shadow"></span><img alt="Mici"><span class="effect slash-effect"></span>
+          </div>
+        </div>
+
+        <div class="npc elder" id="elder">
+          <span class="shadow"></span>
+          <div class="elder-sprite">
+            <i class="elder-hair"></i><i class="elder-face"></i><i class="elder-body"></i><i class="elder-staff"></i>
+          </div>
+          <strong>Trưởng làng</strong>
+        </div>
+
+        <div class="enemy" id="enemy" hidden>
+          <span class="shadow"></span>
+          <img id="enemyImage" alt="" hidden>
+          <div class="enemy-placeholder" id="enemyPlaceholder" aria-label="Kẻ địch">
+            <span class="ear left"></span><span class="ear right"></span>
+            <span class="face"><i></i><i></i><b></b></span>
+            <span class="body"></span><span class="tail"></span>
+          </div>
+        </div>
+
+        <section class="dialogue-box" id="dialogueBox" hidden>
+          <div class="dialogue-speaker" id="dialogueSpeaker">Trưởng làng</div>
+          <p id="dialogueText"></p>
+          <div class="dialogue-actions">
+            <button class="dialogue-skip" id="dialogueSkip" type="button">Bỏ qua</button>
+            <button id="dialogueNext" type="button">Tiếp theo</button>
+          </div>
+        </section>
+      </section>
+
+      <section class="level-up-box" id="levelUpBox" hidden>
+        <strong class="level-up-title">Tăng Cấp Tổ Đội</strong>
+        <p id="levelUpText">Bắt buộc chọn một trong ba nâng cấp.</p>
+        <div class="upgrade-options" id="upgradeOptions"></div>
+      </section>
+
+      <section class="level-up-box revive-box" id="reviveBox" hidden>
+        <strong class="level-up-title">Tổ Đội Đã Thất Bại</strong>
+        <p>Chọn một đánh đổi để hồi sinh với 100% HP và tiếp tục trận đấu.</p>
+        <div class="upgrade-options" id="reviveOptions"></div>
+      </section>
+
+      <section class="bottom-hud">
+        <div class="stats-panel">
+          <div class="stat exp-stat"><span class="exp-icon">EXP</span><span class="level-copy"><strong id="partyLevel">LV.1</strong><small id="partyExp">0 / 80</small></span></div>
+          <div class="stat hp-stat"><span class="stat-icon">♥</span><span><small>HP</small><strong id="partyHpText">380 / 380</strong></span></div>
+          <div class="stat"><span class="stat-icon sword">◆</span><span><small>Công</small><strong id="attackText">107</strong></span></div>
+          <div class="stat"><span class="stat-icon shield">◆</span><span><small>Thủ</small><strong id="defenseText">25</strong></span></div>
+        </div>
+
+        <div class="buff-panel">
+          <span class="buff-icon">◆</span>
+          <span class="quest-copy"><small id="questTitle">Nguồn Lương Thực Bị Cắt Đứt</small><strong id="objectiveText">Nhận nhiệm vụ cứu đoàn lương</strong></span>
+          <span class="buff-spark">✦</span>
+        </div>
+
+        <div class="combat-card">
+          <span class="day-tag">Ngày <b id="dayText">1</b></span>
+          <p id="combatLog" aria-live="polite">Mici bắt đầu hành trình tại làng Breeze.</p>
+        </div>
+
+        <button class="next-day" id="nextDayButton" type="button"><span>Ngày Tiếp Theo</span></button>
+      </section>
+    </section>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
