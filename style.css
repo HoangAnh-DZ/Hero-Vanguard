@@ -1365,11 +1365,15 @@ button {
   text-shadow: 0 0 8px #4dff58;
 }
 
+/* =========================
+   BOTTOM HUD - COMPACT DEMO LAYOUT
+   ========================= */
+
 .bottom-hud {
   position: absolute;
   z-index: 30;
   right: 8px;
-  bottom: 42px;
+  bottom: 8px;
   left: 8px;
 }
 
@@ -1377,7 +1381,7 @@ button {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: -14px -8px -42px;
+  inset: -9px -8px -60px;
   border-top: 3px solid var(--ui-edge);
   background:
     radial-gradient(circle at 18% 30%, rgba(36, 56, 78, 0.2), transparent 26%),
@@ -1388,8 +1392,8 @@ button {
 .skill-energy-panel {
   display: grid;
   grid-template-columns: repeat(var(--energy-count, 3), minmax(0, 1fr));
-  gap: 8px;
-  margin: 0 2px 8px;
+  gap: 7px;
+  margin: 0 2px 6px;
 }
 
 .skill-energy-panel[hidden] {
@@ -1402,12 +1406,12 @@ button {
 
 .skill-energy-card {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   min-width: 0;
-  min-height: 48px;
-  padding: 5px 7px;
+  min-height: 43px;
+  padding: 4px 7px;
   border: 3px solid var(--ui-edge);
   border-radius: 10px;
   color: #fff4d1;
@@ -1422,8 +1426,8 @@ button {
 }
 
 .skill-energy-card img {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
   object-position: center bottom;
   filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.65));
@@ -1471,7 +1475,7 @@ button {
 .stats-panel {
   display: grid;
   grid-template-columns: 0.95fr 1.45fr 0.8fr 1fr;
-  min-height: 60px;
+  min-height: 54px;
   overflow: hidden;
   border-radius: 17px;
   background: linear-gradient(180deg, #172533, #09121c);
@@ -1483,7 +1487,7 @@ button {
   justify-content: center;
   gap: 6px;
   min-width: 0;
-  padding: 6px 4px;
+  padding: 5px 4px;
   border-right: 1px solid #2f3338;
   text-shadow: 0 2px #000;
 }
@@ -1500,7 +1504,7 @@ button {
 
 .stat small {
   color: #ffe9bc;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .stat strong {
@@ -1511,7 +1515,7 @@ button {
 
 .stat-icon {
   color: #ff3862;
-  font-size: 27px;
+  font-size: 25px;
   filter: drop-shadow(0 2px #49000d);
 }
 
@@ -1543,14 +1547,14 @@ button {
 
 .exp-icon {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   place-items: center;
   border: 3px solid #b5f028;
   border-radius: 10px 10px 14px 14px;
   color: white;
   background: #071510;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
   transform: rotate(2deg);
   box-shadow: inset 0 0 0 2px #287e20;
@@ -1560,9 +1564,9 @@ button {
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 43px;
-  margin: 7px 2px;
-  padding: 7px 17px;
+  min-height: 40px;
+  margin: 5px 2px;
+  padding: 6px 15px;
   overflow: hidden;
   border: 4px solid #070b10;
   border-radius: 11px;
@@ -1574,9 +1578,9 @@ button {
 }
 
 .buff-icon {
-  margin-right: 11px;
+  margin-right: 10px;
   color: #dbefff;
-  font-size: 25px;
+  font-size: 23px;
   transform: rotate(45deg);
   filter: drop-shadow(0 2px #74420b);
 }
@@ -1595,7 +1599,7 @@ button {
 .quest-copy small {
   overflow: hidden;
   color: #d9efff;
-  font-size: 9px;
+  font-size: 8px;
   line-height: 1.1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1604,7 +1608,7 @@ button {
 .quest-copy strong {
   overflow: hidden;
   font-size: 13px;
-  line-height: 1.2;
+  line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1615,9 +1619,9 @@ button {
 
 .combat-card {
   position: relative;
-  min-height: 90px;
-  margin: 7px 2px;
-  padding: 27px 17px 10px;
+  min-height: 80px;
+  margin: 5px 2px 7px;
+  padding: 25px 17px 8px;
   border: 4px solid #090b0e;
   border-radius: 13px;
   color: #16120d;
@@ -1656,17 +1660,17 @@ button {
 
 .next-day {
   display: block;
-  width: 60%;
-  min-height: 60px;
-  margin: 0 auto;
-  padding: 8px 14px 11px;
+  width: 58%;
+  min-height: 54px;
+  margin: 6px auto 0;
+  padding: 7px 14px 9px;
   cursor: pointer;
   border: 5px solid #080b0d;
   border-radius: 35px;
   color: white;
   background: linear-gradient(var(--green-1), var(--green-2));
   box-shadow: inset 0 0 0 3px #a8ff5e, 0 6px 0 #0c3214;
-  font-size: clamp(19px, 5.5vw, 27px);
+  font-size: clamp(19px, 5.2vw, 25px);
   font-weight: 900;
   letter-spacing: -1px;
   text-shadow: 0 3px 0 #071b08, 2px 0 0 #071b08, -2px 0 0 #071b08;
